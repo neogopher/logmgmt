@@ -1,26 +1,21 @@
 #!/usr/bin/env bash
 
+#set -o errexit 
+
+source utils.sh
+
 logsDirPath="logs"
 
-if $(id -u) -eq 0
+if [[ $(id -u) -eq 0 ]]
 then
   fatal "This script must be run as a non-root user."
 elif [[ ! -d "${logsDirPath}" ]]
 then
-  fatal "The \'${logsDirPath}\' directory is not present."
+  fatal "The '${logsDirPath}' directory is not present."
 elif [[ $# -lt 1 ]]
 then
   fatal "Needs at least one argument, can be gen, rotate, or clean."
 fi
-
-info() {
-  echo "[INFO] $1"
-}
-
-fatal() {
-  echo "[FATAL] $1"
-  exit 1
-}
 
 
 gen_logs() {
@@ -28,7 +23,7 @@ gen_logs() {
   number=$2
 
   for (( i=1; i <= $number; i++)) {
-    echo "The quick brown fox jumps over the lazy dog." >> "logs/${filename}"
+    echo "The quick brown fox jumps over the lazy dog." >> "${logsDirPath}/${filename}"
   }
 
 }
@@ -41,7 +36,7 @@ rotate_logs() {
   if [[ ${lineCount} -ge ${threshold} ]]
   then
 	  timestamp=$(date +%s)
-	  mv "logs/${filename}" logs/"${filename}"-"${timestamp}"
+	  mv "${logsDirPath}/${filename}" logs/"${filename}"-"${timestamp}"
 
 	  #info "The ${filename} has been renamed to ${filename}-${timestamp}."
   fi
@@ -53,11 +48,12 @@ clean_logs() {
   check_files_count
   fileCount=$?
 
-  while [[ ${fileCount} -gt ${threshold} ]]
+  while [[ $fileCount -gt $threshold ]]
   do
-    oldestFile=$(ls -1rc logs/ | head -1)
+    oldestFile=$(find "${logsDirPath}" -type "f" | sort -d | head -1)
 
-    rm logs/"${oldestFile}"
+    info "Deleting file '${oldestFile}'"
+    rm "${oldestFile}"
 
     check_files_count
     fileCount=$?
@@ -65,12 +61,38 @@ clean_logs() {
 }
 
 check_files_count() {
-  return "$(ls -1rc logs/ | wc -l)"
+  return "$(find ${logsDirPath} -type 'f' | wc -l)"
 }
 
+print_usage() {
+cat << EOF
+logmgmt is a log management utility that is capable of doing the following:
 
-gen_logs earth-log 50
+- Rotating the logs: rename the current log file to name-timestamp.
+- Cleaning the logs: delete old logs files to re-claim the storage space.
 
-rotate_logs earth-log 20
+[USAGE]
 
-clean_logs 5
+ logmgmt [subcommand]
+
+ Subcommand can be:
+   gen - This will generate logs for testing
+   rotate - This will do the rotation of the log file if it has number of lines than greater than 20
+   clean - This will delete the old logs from logs directory, and always keep 5 log files in the directory
+EOF
+}
+
+case $1 in 
+  "gen") 
+	  gen_logs earth-log 50
+	  ;;
+  "rotate") 
+	  rotate_logs earth-log 20
+	  ;;
+  "clean") 
+	  clean_logs 5
+	  ;;
+  "--help") 
+	  print_usage
+	  ;;
+esac
