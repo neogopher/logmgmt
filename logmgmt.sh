@@ -32,11 +32,11 @@ rotate_logs() {
   filename=$1
   threshold=20
 
-  lineCount=$(wc -l "logs/${filename}" | cut -d' ' -f 1)
+  lineCount=$(wc -l "${logsDirPath}/${filename}" | cut -d' ' -f 1)
   if [[ ${lineCount} -ge ${threshold} ]]
   then
 	  timestamp=$(date +%s)
-	  mv "${logsDirPath}/${filename}" logs/"${filename}"-"${timestamp}"
+	  mv "${logsDirPath}/${filename}" "${logsDirPath}/${filename}"-"${timestamp}"
 
 	  #info "The ${filename} has been renamed to ${filename}-${timestamp}."
   fi
