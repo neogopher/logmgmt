@@ -38,30 +38,20 @@ rotate_logs() {
 	  timestamp=$(date +%s)
 	  mv "${logsDirPath}/${filename}" "${logsDirPath}/${filename}"-"${timestamp}"
 
-	  #info "The ${filename} has been renamed to ${filename}-${timestamp}."
+	  info "The ${filename} has been renamed to ${filename}-${timestamp}."
   fi
 }
 
 clean_logs() {
   threshold=$1
 
-  check_files_count
-  fileCount=$?
-
-  while [[ $fileCount -gt $threshold ]]
+  while [[ $(find "${logsDirPath}/" -type 'f' | wc -l) -gt $threshold ]]
   do
-    oldestFile=$(find "${logsDirPath}" -type "f" | sort -d | head -1)
+    oldestFile=$(find "${logsDirPath}/" -type "f" | sort -d | head -1)
 
     info "Deleting file '${oldestFile}'"
     rm "${oldestFile}"
-
-    check_files_count
-    fileCount=$?
   done
-}
-
-check_files_count() {
-  return "$(find ${logsDirPath} -type 'f' | wc -l)"
 }
 
 print_usage() {
